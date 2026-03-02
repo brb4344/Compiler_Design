@@ -5,61 +5,82 @@
 void yyerror(const char *s);
 extern int yylex();
 extern FILE *yyin;
+
 %}
 
-%token CONST EQUALS SLASH AND NOT PIPE STAR PLUS QUESTION
-%token LPAREN RPAREN LBRACK RBRACK CARET DOT SUB_START SUB_END
-%token ID LITERAL RANGE
+%union {
+    char* sval;
+}
 
-/* Precedence: Low to High */
-%left PIPE
-%left AND
-%left SEQ_PREC
-%nonassoc NOT
-%nonassoc STAR PLUS QUESTION
+%token <sval> ID LITERAL RANGE CONST WILD
+%token <sval> EQUALS SLASH AND NOT OR STAR PLUS QUESTION 
+%token <sval> LPAREN RPAREN LBRACK RBRACK CARET DOT SUB_START SUB_END
 
+
+%type <sval> System Definition RootRegex rrg Seq Regex Term Alt Repeat Substitute;
+
+%left AND NOT
+%left OR
+%left STAR PLUS QUESTION
+
+
+%start mystart
 %%
 
-System:
-    Definitions SLASH RootRegex SLASH { printf("accepts\n"); exit(0); }
+
+mystart: System
+    | mystart System
+    | error { 
+        yyerror("Syntax error"); 
+        yyerrok; 
+        return 1; // returns 1 to report error to main
+    }
+    ;
+System: 
+    SLASH RootRegex SLASH 
+    | Definition System
     ;
 
-Definitions:
-    /* empty */
-    | Definitions Definition
+Definition: CONST ID EQUALS SLASH Alt SLASH
     ;
 
-Definition:
-    CONST ID EQUALS SLASH Regex SLASH
+RootRegex: RootRegex AND RootRegex
+    | NOT Regex  
+    | Regex               
     ;
 
-RootRegex:
-    RootRegex AND RootRegex
-    | NOT Regex
-    | Regex
+Regex: Alt;
+
+Alt: Seq
+    |Alt OR Seq
     ;
 
-Regex:
-    Regex PIPE Regex             /* Alternation */
-    | Regex Regex %prec SEQ_PREC  /* Sequence */
-    | Regex STAR
-    | Regex PLUS
-    | Regex QUESTION
-    | Term
-    | LPAREN Regex RPAREN
+Seq: rrg
+    | Seq rrg
     ;
 
-Term:
-    LITERAL
+rrg: Term
+    | Repeat
+    | LPAREN Alt RPAREN
+    ;
+
+Repeat: rrg STAR
+    | rrg PLUS
+    | rrg QUESTION
+    ;
+
+Term: LITERAL
     | RANGE
-    | DOT
-    | SUB_START ID SUB_END
+    | WILD
+    | Substitute
     ;
+
+Substitute: SUB_START ID SUB_END ;
 
 %%
 
 void yyerror(const char *s) {
-    fprintf(stderr, "error: %s\n", s);
+    fprintf(stderr, "rejects\n");
     exit(1);
 }
 
@@ -70,10 +91,17 @@ int main(int argc, char **argv) {
     }
     FILE *f = fopen(argv[1], "r");
     if (!f) {
-        perror(argv[1]);
+        perror("File error");
         return 1;
     }
     yyin = f;
-    yyparse();
+    if(yyparse()==0){ 
+        printf("accepts\n");
+        exit(0);
+    }
+    else{
+        printf("Exiting due to error.\n");
+        exit(1);
+    }
     return 0;
 }

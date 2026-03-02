@@ -1,19 +1,19 @@
 %{
-#include "../parser/parser.tab.h" 
-#include <stdio.h>
+#include "../parser/parser.tab.h"
 #include <string.h>
+#include <stdio.h>
 %}
 
 %option noyywrap
 
 %%
 
-"const"                 { return CONST; }
-"="                     { return EQUALS; }
-"/"                     { return SLASH; }
+"const"                 { printf ("I am const %s\n", yytext); return CONST;}
+"="                     { printf ("I am = %s \n", yytext); return EQUALS;}
+"/"                     { printf ("I am slash %s\n", yytext); return SLASH; }
 "&"                     { return AND; }
 "!"                     { return NOT; }
-"|"                     { return PIPE; }
+"|"                     { return OR; }
 "*"                     { return STAR; }
 "+"                     { return PLUS; }
 "?"                     { return QUESTION; }
@@ -22,17 +22,29 @@
 "["                     { return LBRACK; }
 "]"                     { return RBRACK; }
 "^"                     { return CARET; }
-"."                     { return DOT; }
+"."                     { return WILD; }
 "$\{"                   { return SUB_START; }
 "}"                     { return SUB_END; }
 
-"//".* { /* Skip comments */ }
-[ \t\n\r]+              { /* Skip whitespace */ }
+"//".*                  { }
+[ \t\n\r]+              { }
 
-\"([^\"%]|%x[0-9a-fA-F]+;)*\"   { return LITERAL; }
-[a-zA-Z0-9_]+                   { return ID; }
-"["\^?([^\]\\]|\\.)+"]"         { return RANGE; }
 
-.                       { return yytext[0]; }
+\[(%x[0-9A-Fa-f]+;|[^%\]])*\] {     yylval.sval = strdup(yytext);   printf ("I am range %s\n",yytext);  return RANGE; }
 
+\"(%x[0-9A-Fa-f]+;|[^\"%])*\" { yylval.sval = strdup(yytext); printf ("I am literal %s\n", yytext); return LITERAL;
+}
+
+
+[a-zA-Z0-9_]+                   { yylval.sval = strdup(yytext); printf ("I am ID %s\n", yytext); return ID; }
+
+
+
+
+
+.   { fprintf(stderr,"Invalid char: %s\n",yytext); exit(1); }
+
+<<EOF>> {     
+    return 0;
+}
 %%
