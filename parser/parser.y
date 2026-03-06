@@ -1,6 +1,8 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h> 
+#include "../Library/AST.h"
 
 void yyerror(const char *s);
 extern int yylex();
@@ -10,72 +12,76 @@ extern FILE *yyin;
 
 %union {
     char* sval;
+    struct ASTNode *node;
 }
 
 %token <sval> ID LITERAL RANGE CONST WILD
 %token <sval> EQUALS SLASH AND NOT OR STAR PLUS QUESTION 
 %token <sval> LPAREN RPAREN LBRACK RBRACK CARET DOT SUB_START SUB_END
 
-
-%type <sval> System Definition RootRegex rrg Seq Regex Term Alt Repeat Substitute;
+// FIX 1: All rules that return ASTNode* must be <node>, not <sval>
+%type <node> mystart System Definition RootRegex rrg Seq Regex Term Alt Repeat Substitute;
 
 %left AND NOT
 %left OR
 %left STAR PLUS QUESTION
 
-
 %start mystart
 %%
 
-
-mystart: System
-    | mystart System
+// FIX 2: mystart properly typed, print/free on every completed System
+mystart: System                 { $$ = $1; printAST($1, 0); freeAST($1); }
+    | mystart System            { $$ = $2; printAST($2, 0); freeAST($2); }
     | error { 
         yyerror("Syntax error"); 
         yyerrok; 
-        return 1; // returns 1 to report error to main
+        return 1;
     }
     ;
+
 System: 
-    SLASH RootRegex SLASH 
-    | Definition System
+    SLASH RootRegex SLASH       { $$ = createNode("System", NULL, $2, NULL); }
+    | Definition System         { $$ = createNode("System", NULL, $1, $2); }
     ;
 
-Definition: CONST ID EQUALS SLASH Alt SLASH
+Definition: CONST ID EQUALS SLASH Alt SLASH 
+                                { $$ = createNode("Definition", $2, $5, NULL); }
     ;
 
-RootRegex: RootRegex AND RootRegex
-    | NOT Regex  
-    | Regex               
+RootRegex: RootRegex AND RootRegex  { $$ = createNode("AND", NULL, $1, $3); }
+    | NOT Regex                     { $$ = createNode("NOT", NULL, $2, NULL); }
+    | Regex                         { $$ = $1; }
     ;
 
-Regex: Alt;
-
-Alt: Seq
-    |Alt OR Seq
+Regex: Alt                      { $$ = $1; }
     ;
 
-Seq: rrg
-    | Seq rrg
+Alt: Seq                        { $$ = $1; }
+    | Alt OR Seq                { $$ = createNode("OR", NULL, $1, $3); }
     ;
 
-rrg: Term
-    | Repeat
-    | LPAREN Alt RPAREN
+Seq: rrg                        { $$ = $1; }
+    | Seq rrg                   { $$ = createNode("Seq", NULL, $1, $2); }
     ;
 
-Repeat: rrg STAR
-    | rrg PLUS
-    | rrg QUESTION
+rrg: Term                       { $$ = $1; }
+    | Repeat                    { $$ = $1; }
+    | LPAREN Alt RPAREN         { $$ = createNode("Group", NULL, $2, NULL); }
     ;
 
-Term: LITERAL
-    | RANGE
-    | WILD
-    | Substitute
+Repeat: rrg STAR                { $$ = createNode("STAR", NULL, $1, NULL); }
+    | rrg PLUS                  { $$ = createNode("PLUS", NULL, $1, NULL); }
+    | rrg QUESTION              { $$ = createNode("QUESTION", NULL, $1, NULL); }
     ;
 
-Substitute: SUB_START ID SUB_END ;
+Term: LITERAL                   { $$ = createNode("Literal", $1, NULL, NULL); }
+    | RANGE                     { $$ = createNode("Range", $1, NULL, NULL); }
+    | WILD                      { $$ = createNode("Wild", $1, NULL, NULL); }
+    | Substitute                { $$ = $1; }
+    ;
+
+Substitute: SUB_START ID SUB_END  { $$ = createNode("Substitute", $2, NULL, NULL); }
+    ;
 
 %%
 
@@ -95,11 +101,10 @@ int main(int argc, char **argv) {
         return 1;
     }
     yyin = f;
-    if(yyparse()==0){ 
+    if (yyparse() == 0) {
         printf("accepts\n");
         exit(0);
-    }
-    else{
+    } else {
         printf("Exiting due to error.\n");
         exit(1);
     }

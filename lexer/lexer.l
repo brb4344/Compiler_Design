@@ -8,35 +8,35 @@
 
 %%
 
-"const"                 { printf ("I am const %s\n", yytext); return CONST;}
-"="                     { printf ("I am = %s \n", yytext); return EQUALS;}
-"/"                     { printf ("I am slash %s\n", yytext); return SLASH; }
-"&"                     { return AND; }
-"!"                     { return NOT; }
-"|"                     { return OR; }
-"*"                     { return STAR; }
-"+"                     { return PLUS; }
-"?"                     { return QUESTION; }
-"("                     { return LPAREN; }
-")"                     { return RPAREN; }
-"["                     { return LBRACK; }
-"]"                     { return RBRACK; }
-"^"                     { return CARET; }
-"."                     { return WILD; }
-"$\{"                   { return SUB_START; }
-"}"                     { return SUB_END; }
+"const"                 { yylval.sval = strdup(yytext); return CONST;}
+"="                     { yylval.sval = strdup(yytext); return EQUALS;}
+"/"                     { yylval.sval = strdup(yytext); return SLASH; }
+"&"                     { yylval.sval = strdup(yytext); return AND; }
+"!"                     { yylval.sval = strdup(yytext);  return NOT; }
+"|"                     { yylval.sval = strdup(yytext); return OR; }
+"*"                     { yylval.sval = strdup(yytext);return STAR; }
+"+"                     { yylval.sval = strdup(yytext); return PLUS; }
+"?"                     { yylval.sval = strdup(yytext); return QUESTION; }
+"("                     { yylval.sval = strdup(yytext); return LPAREN; }
+")"                     { yylval.sval = strdup(yytext); return RPAREN; }
+"["                     { yylval.sval = strdup(yytext); return LBRACK; }
+"]"                     { yylval.sval = strdup(yytext); return RBRACK; }
+"^"                     { yylval.sval = strdup(yytext); return CARET; }
+"."                     { yylval.sval = strdup(yytext); return WILD; }
+"$\{"                   { yylval.sval = strdup(yytext); return SUB_START; }
+"}"                     { yylval.sval = strdup(yytext); return SUB_END; }
 
 "//".*                  { }
 [ \t\n\r]+              { }
 
 
-\[(%x[0-9A-Fa-f]+;|[^%\]])*\] {     yylval.sval = strdup(yytext);   printf ("I am range %s\n",yytext);  return RANGE; }
+\[(%x[0-9A-Fa-f]+;|[^%\]])*\] {     yylval.sval = strdup(yytext);  return RANGE; }
 
-\"(%x[0-9A-Fa-f]+;|[^\"%])*\" { yylval.sval = strdup(yytext); printf ("I am literal %s\n", yytext); return LITERAL;
+\"(%x[0-9A-Fa-f]+;|[^\"%])*\" { yylval.sval = strdup(yytext);  return LITERAL;
 }
 
 
-[a-zA-Z0-9_]+                   { yylval.sval = strdup(yytext); printf ("I am ID %s\n", yytext); return ID; }
+[a-zA-Z0-9_]+                   { yylval.sval = strdup(yytext);  return ID; }
 
 
 

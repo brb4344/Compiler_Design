@@ -1,5 +1,16 @@
 # Compiler_Design
-This is an assignment of Subject Compiler Design CS541-001 (University of Kentucky)
+This is an assignment of Subject Compiler Design CS541-001.
+In this part of the assignment we will extend the regex compiler with an AST and semantic checker.
+The interface will be the same as for the lexer/parser but we will expect the compiler to now:
+* Ensure that all names are bound -- specifically the ${ID} expansions must match a declaration const ID = ...;
+* In the string and range expressions we must ensure that the %x...; escapes are well formed and valid (less that unicode max codepoint)
+If not already done we also need to build an AST so that we are ready for interpreting the regex operations in part #3.
+
+As before for grading purposes your main application will simply:
+1. Take a single file argument from the command line
+2. Read in this file
+3. Output "accepts" and exits(0) if the file contains a syntactically (and semantically) valid regular expression and outputs any errors and exits(1) otherwise. 
+The project should provide a Makefile at the top-level of the directory that when run by default produces an executable (also at the top-level) called "parse".
 # 📜 Regex Lexer & Parser
 A robust lexical analyzer and syntax parser designed for a custom Regular Expression grammar. This project is built using Flex and Bison and is optimized for Ubuntu 24.04.
 ## 📘 Project Overview
@@ -79,31 +90,3 @@ ID         := [a-zA-Z0-9_]+
     * **Sequencing** (concatenation) has higher precedence than alternation.
     * **Alternation** (`|`) has the lowest precedence among the standard regex operators.
 ---
-## 🧪 Examples
-
-### ✅ Valid Regular Expressions
-These patterns follow the formal grammar and will result in an `accepts` output:
-
-| Category | Example |
-| :--- | :--- |
-| **Simple Literal** | `/"this is a literal"/` |
-| **Unicode & Repeat** | `/"unicode literal" "🌶"*/` |
-| **Escaped Hex** | `/"%x7;%x0;"/` |
-| **Character Class** | `/"h"[aeiou]+/` |
-| **Grouping & Alt** | `/[+-]? ("0" \| [1-9][0-9]+)/` |
-| **Substitution** | `/[+-]? ("0" \| ${NonZeroDigit}${Digit}+)/` |
-| **Boolean & Wild** | `/${Filename} & .+ ".txt"/` |
-| **Definition** | `const s_re = /[a-z]/` |
-
-
-
-### ❌ Invalid Expressions
-These patterns will trigger a syntax error and exit with status 1:
-
-| Example | Reason for Failure |
-| :--- | :--- |
-| `/"abc/` | Missing close quote |
-| `/abc/` | Literals must be enclosed in double quotes |
-| `/("ok) )/` | Unbalanced parentheses |
-| `/[abc]^/` | Unexpected `^` character |
-| `/!("abc" & [a-z])/` | Cannot nest `&` inside `!` (Boolean constraint) |
