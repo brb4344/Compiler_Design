@@ -23,7 +23,7 @@ In Parser, I have implemented two pass compiler for the compilation. The first p
 Substitution nodes ${X} are just stored in the AST without checking yet. During second pass Pass 2 runs after yyparse() completes. It walks the entire AST and checks every ${X} node against the symbol table. If any name is not found, it rejects. 
 
 ---
-# 🌲 Abstract Tree & Sumbol Table
+# 🌲 Abstract Tree & Symbol Table
 The AST is a binary tree where every node has a type, an optional value, and left and right children. The parser builds it bottom-up as grammar rules are reduced — leaf nodes like Literal, Range, and Wild store their string value, while internal nodes like Seq, OR, AND, STAR, and Substitute connect their children. The root is stored in rootAST and represents the entire parsed program. After Pass 2 validates all substitutions, the tree is printed with printAST and then freed with freeAST which recursively walks and frees every node.
 
 The symbol table is a linked list that tracks all const identifier names defined in the file. When the parser sees const X = /.../ , it calls insertSymbol to register the name. If the same name is inserted twice it is rejected as a duplicate. After the full parse completes, checkSymbol is used in Pass 2 to verify every ${X} substitution has a matching definition. The table persists across multiple Systems in the same file so forward references work correctly, and is freed once in main after everything is done.
