@@ -1,27 +1,28 @@
-/* We have tp define a node structure*/
+/* A node structure is defined here. A node has its name, may have value: for leaf nodes only, children either to left or right*/
 typedef struct ASTNode {
-    char *type; //name for the node
-    char *value; // value of the node
-    struct ASTNode *left; //if sub-branches, then pointer to left sub node
-    struct ASTNode *right; //if sub-branches, then pointer to right sub node
+    char *type; 
+    char *value; 
+    struct ASTNode *left; 
+    struct ASTNode *right; 
+
 } ASTNode;
 
-// Function to create an AST node
+/*Function to create an AST node. It will take the tree paramaters as an arguments. Then allocate the size for the node, allocate value and will point to new nodes*/
+
 ASTNode* createNode(char *type, char *value, ASTNode *left, ASTNode *right) {
-    ASTNode *node = (ASTNode *)malloc(sizeof(ASTNode)); // allocate size of ASTNode
-    node->type = strdup(type); // get the type
-    node->value = value ? strdup(value): NULL; // check if value is NULL, if not save the value
-    node->left = left; // left sub node
-    node->right = right; // right sub node
-    return node; // return the new node
+    ASTNode *node = (ASTNode *)malloc(sizeof(ASTNode)); 
+    node->type = strdup(type); 
+    node->value = value ? strdup(value): NULL;
+    node->left = left; 
+    node->right = right; 
+    return node;
 }
 
-// Recursive function to print AST in a tree format
+/*This printAST is Recursive function that print AST in a tree format as hierarchy visualization. The left and right children are printed in recursive manner and finally all memory will be free*/ 
 void printAST(ASTNode *node, int depth) {
     if (node == NULL)
         return;
-    
-    // Indentation for hierarchy visualization
+        
     for (int i = 0; i < depth; i++)
         printf("  ");
 
@@ -30,29 +31,26 @@ void printAST(ASTNode *node, int depth) {
         printf(" -%s", node->value);
     printf("\n");
 
-    // Recursively print left and right children
+    
     printAST(node->left, depth + 1);
     printAST(node->right, depth + 1);
 }
 
-// Recursive function to free each subnode of AST
 void freeAST(ASTNode *node) {
     if (node == NULL)
         return;
+   
+    freeAST(node->left); 
+    freeAST(node->right); 
 
-    // printf("Freeing AST:%s %s\n",node->type,node->value);
-
-    freeAST(node->left); // recursively free left subnode
-    freeAST(node->right); // recursively free right subnode
-
-    if(node->type != NULL){ // free type if not NULL
+    if(node->type != NULL){ 
         free(node->type);
         node->type=NULL;
     }
-    if(node->value != NULL){ // free value if not NULL
+    if(node->value != NULL){ 
         free(node->value);
         node->value=NULL;
     }
-    free(node); // free the node
-    node=NULL; // make sure to keep the node NULL to avoid dangling pointers
+    free(node); 
+    node=NULL; 
 }

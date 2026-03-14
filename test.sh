@@ -1,6 +1,6 @@
 accepts=0; rejects=0;
 echo "=== Testing ACCEPTED files ==="
-for file in txts/accepted/*.txt; do
+for file in test/accepts/*.re; do
     [ -e "$file" ] || continue
     echo "--- $file ---"
     echo "Content:"
@@ -22,7 +22,7 @@ echo "Accepted: $accepts | Rejected: $rejects"
 
 accepts=0; rejects=0;
 echo "=== Testing REJECTED files ==="
-for file in txts/rejected/*.txt; do
+for file in test/rejects/*.re; do
     [ -e "$file" ] || continue
     echo "--- $file ---"
     echo "Content:"

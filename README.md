@@ -11,8 +11,26 @@ As before for grading purposes your main application will simply:
 2. Read in this file
 3. Output "accepts" and exits(0) if the file contains a syntactically (and semantically) valid regular expression and outputs any errors and exits(1) otherwise. 
 The project should provide a Makefile at the top-level of the directory that when run by default produces an executable (also at the top-level) called "parse".
+
+---
+
 # 📜 Regex Lexer & Parser
 A robust lexical analyzer and syntax parser designed for a custom Regular Expression grammar. This project is built using Flex and Bison and is optimized for Ubuntu 24.04.
+
+The lexer is responsible for tokenizing and validating the content inside tokens. For LITERAL tokens, it ensures quotes are balanced, " and % are properly escaped, and any %x...; escape has only digits 0-9, a closing semicolon, and a codepoint strictly less than the unicode maximum. For RANGE tokens, it additionally ensures ^ only appears at the start, and that any start-end pair has start codepoint less than or equal to end codepoint. Any character that does not match any rule hits the catch-all and is rejected immediately. Whitespace and line comments starting with // are silently discarded.
+
+In Parser, I have implemented two pass compiler for the compilation. The first pass runs during yyparse(). The lexer validates escapes and ranges immediately. The parser builds the AST and inserts every const name into the symbol table. 
+Substitution nodes ${X} are just stored in the AST without checking yet. During second pass Pass 2 runs after yyparse() completes. It walks the entire AST and checks every ${X} node against the symbol table. If any name is not found, it rejects. 
+
+---
+# 🌲 Abstract Tree & Sumbol Table
+The AST is a binary tree where every node has a type, an optional value, and left and right children. The parser builds it bottom-up as grammar rules are reduced — leaf nodes like Literal, Range, and Wild store their string value, while internal nodes like Seq, OR, AND, STAR, and Substitute connect their children. The root is stored in rootAST and represents the entire parsed program. After Pass 2 validates all substitutions, the tree is printed with printAST and then freed with freeAST which recursively walks and frees every node.
+
+The symbol table is a linked list that tracks all const identifier names defined in the file. When the parser sees const X = /.../ , it calls insertSymbol to register the name. If the same name is inserted twice it is rejected as a duplicate. After the full parse completes, checkSymbol is used in Pass 2 to verify every ${X} substitution has a matching definition. The table persists across multiple Systems in the same file so forward references work correctly, and is freed once in main after everything is done.
+
+---
+
+
 ## 📘 Project Overview
 This project is part of a compiler design course focused on implementing a simple regular-expression compiler. This phase includes the implementation of a lexer, parser, and parse-tree data structure.
 
@@ -52,8 +70,13 @@ make
 ### 2. Running the Parser
 The application takes a single file argument from the command line. It outputs accepts and exits with code 0 if the file contains a syntactically valid regular expression; otherwise, it outputs errors and exits with code 1.
 
+To run the single test file
 ```bash
 ./parse test.txt
+```
+To run test files under folder test:
+```bash
+./ test.sh
 ```
 ### Cleaning Up (Needed when remove old parse and want to make new parse)
 To remove generated C files and the executable for a fresh build:
